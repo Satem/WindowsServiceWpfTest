@@ -4,18 +4,23 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModels="clr-namespace:WpfApp.ViewModels"
+        xmlns:converters="clr-namespace:WpfApp.Converters"
         mc:Ignorable="d"
         Title="MainWindow"
         Height="450"
         Width="800"
         d:DataContext="{d:DesignInstance viewModels:MainViewModel}">
+<Window.Resources>
+    <converters:ServiceControllerStatusToStringConverter x:Key="StatusToStringConverter" />
+</Window.Resources>
+
     <Grid>
         <DataGrid ItemsSource="{Binding Services}"
                   SelectedItem="{Binding SelectedService, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   SelectionMode="Single"
-                  FocusVisualStyle="{x:Null}">
+                  SelectionUnit="FullRow">
             <DataGrid.Columns>
                 <DataGridTextColumn
                     Header="Name"
@@ -27,6 +32,10 @@
                     Binding="{Binding DisplayName}"
                     Width="*"
                 />
+                <DataGridTextColumn
+                    Header="Status"
+                    Binding="{Binding Status, Converter={StaticResource StatusToStringConverter}}"
+                    />
                 <DataGridTextColumn
                     Header="Account"
                     Binding="{Binding Account}"

@@ -105,6 +105,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Converters\ServiceControllerStatusToStringConverter.cs" />
     <Compile Include="Logic\Interfaces\IWindowsServiceHelper.cs" />
     <Compile Include="Models\ServiceModel.cs" />
     <Compile Include="Properties\Annotations.cs" />
