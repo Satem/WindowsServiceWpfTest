@@ -10,12 +10,29 @@
         Height="450"
         Width="800"
         d:DataContext="{d:DesignInstance viewModels:MainViewModel}">
-<Window.Resources>
-    <converters:ServiceControllerStatusToStringConverter x:Key="StatusToStringConverter" />
-</Window.Resources>
-
+    <Window.Resources>
+        <converters:ServiceControllerStatusToStringConverter x:Key="StatusToStringConverter" />
+    </Window.Resources>
     <Grid>
-        <DataGrid ItemsSource="{Binding Services}"
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal">
+            <Button Content="Start"
+                    Command="{Binding StartCommand}" />
+            <Button Content="Stop"
+                    Command="{Binding StopCommand}" />
+            <Button Content="Pause"
+                    Command="{Binding PauseCommand}" />
+            <Button Content="Pause"
+                    Command="{Binding RestartCommand}" />
+        </StackPanel>
+
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Services, Mode=OneWay}"
                   SelectedItem="{Binding SelectedService, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
@@ -25,21 +42,17 @@
                 <DataGridTextColumn
                     Header="Name"
                     Binding="{Binding Name}"
-                    SortDirection="Ascending"
-                    />
+                    SortDirection="Ascending" />
                 <DataGridTextColumn
                     Header="DisplayName"
                     Binding="{Binding DisplayName}"
-                    Width="*"
-                />
+                    Width="*" />
                 <DataGridTextColumn
                     Header="Status"
-                    Binding="{Binding Status, Converter={StaticResource StatusToStringConverter}}"
-                    />
+                    Binding="{Binding Status, Converter={StaticResource StatusToStringConverter}}" />
                 <DataGridTextColumn
                     Header="Account"
-                    Binding="{Binding Account}"
-                />
+                    Binding="{Binding Account}" />
             </DataGrid.Columns>
         </DataGrid>
     </Grid>
