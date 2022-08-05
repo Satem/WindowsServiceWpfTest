@@ -6,12 +6,18 @@
         xmlns:viewModels="clr-namespace:WpfApp.ViewModels"
         xmlns:converters="clr-namespace:WpfApp.Converters"
         mc:Ignorable="d"
-        Title="MainWindow"
+        Title="Windows Services"
         Height="450"
         Width="800"
         d:DataContext="{d:DesignInstance viewModels:MainViewModel}">
     <Window.Resources>
-        <converters:ServiceControllerStatusToStringConverter x:Key="StatusToStringConverter" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:ServiceControllerStatusToStringConverter x:Key="StatusToStringConverter" />
+        </ResourceDictionary>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -37,7 +43,8 @@
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   SelectionMode="Single"
-                  SelectionUnit="FullRow">
+                  SelectionUnit="FullRow"
+                  CellStyle="{StaticResource NotFocusableDataGridCell}">
             <DataGrid.Columns>
                 <DataGridTextColumn
                     Header="Name"
