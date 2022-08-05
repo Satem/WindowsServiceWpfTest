@@ -77,5 +77,9 @@
                 RaisePropertyChanged(nameof(CanStop));
             }
         }
+
+        public bool CanNowBeStarted => Status == ServiceControllerStatus.Stopped || Status == ServiceControllerStatus.Paused;
+        public bool CanNowBeStopped => CanStop && Status == ServiceControllerStatus.Running;
+        public bool CanNowBePaused => CanPauseAndContinue && Status == ServiceControllerStatus.Running;
     }
 }

@@ -1,8 +1,10 @@
 ﻿namespace WpfApp.ViewModels
 {
+    using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;
     using Logic.Interfaces;
@@ -10,6 +12,7 @@
     using Models;
     using Prism.Commands;
     using Prism.Mvvm;
+    using ViewModelHelpers;
 
     public class MainViewModel : BindableBase
     {
@@ -17,6 +20,7 @@
 
         private readonly Dictionary<string, ServiceViewModel> _serviceNameToServiceDictionary;
         private readonly ServiceViewModelMapper _serviceViewModelMapper;
+        private readonly ServiceStatusChangeTaskStore _serviceStatusChangeTaskStore;
 
         private readonly IWindowsServiceHelper _windowsServiceHelper;
         private ServiceViewModel _selectedService;
@@ -24,11 +28,13 @@
 
         public MainViewModel(
             IWindowsServiceHelper windowsServiceHelper,
-            ServiceViewModelMapper serviceViewModelMapper
+            ServiceViewModelMapper serviceViewModelMapper,
+            ServiceStatusChangeTaskStore serviceStatusChangeTaskStore
         )
         {
             _windowsServiceHelper = windowsServiceHelper;
             _serviceViewModelMapper = serviceViewModelMapper;
+            _serviceStatusChangeTaskStore = serviceStatusChangeTaskStore;
 
             StartCommand = new DelegateCommand(Start);
             StopCommand = new DelegateCommand(Stop);
@@ -50,6 +56,7 @@
             {
                 _selectedService = value;
                 RaisePropertyChanged(nameof(SelectedService));
+                NotifyViewOfPossibleCommandAvailabilityChange();
             }
         }
 
@@ -61,28 +68,74 @@
 
         public ICommand RestartCommand { get; }
 
+        public bool CanStart => _selectedService != null
+                                && _serviceStatusChangeTaskStore.IsThereAnyRunningTask(_selectedService.Name) == false
+                                && _selectedService.CanNowBeStarted;
+        public bool CanStop => _selectedService != null
+                               && _serviceStatusChangeTaskStore.IsThereAnyRunningTask(_selectedService.Name) == false
+                               && _selectedService.CanNowBeStopped;
+        public bool CanPause => _selectedService != null
+                                && _serviceStatusChangeTaskStore.IsThereAnyRunningTask(_selectedService.Name) == false
+                                && _selectedService.CanNowBePaused;
+        public bool CanRestart => _selectedService != null
+                                  && _serviceStatusChangeTaskStore.IsThereAnyRunningTask(_selectedService.Name) == false
+                                  && _selectedService.CanNowBePaused;
+
         private async void Start()
         {
-            if (_selectedService != null)
-                await _windowsServiceHelper.StartServiceAsync(_selectedService.Name);
+            await RunStatusChangeTaskAsync(_windowsServiceHelper.StartServiceAsync);
         }
 
         private async void Stop()
         {
-            if (_selectedService != null)
-                await _windowsServiceHelper.StopServiceAsync(_selectedService.Name);
+            await RunStatusChangeTaskAsync(_windowsServiceHelper.StopServiceAsync);
         }
 
         private async void Pause()
         {
-            if (_selectedService != null)
-                await _windowsServiceHelper.PauseServiceAsync(_selectedService.Name);
+            await RunStatusChangeTaskAsync(_windowsServiceHelper.StopServiceAsync);
         }
 
         private async void Restart()
         {
-            if (_selectedService != null)
-                await _windowsServiceHelper.RestartServiceAsync(_selectedService.Name);
+            await RunStatusChangeTaskAsync(_windowsServiceHelper.RestartServiceAsync);
+        }
+
+        private async Task RunStatusChangeTaskAsync(
+            Func<string, CancellationToken, Task> statusChangeMethod)
+        {
+            if (_selectedService == null)
+                return;
+
+            var selectedServiceName = _selectedService.Name;
+            var statusChangeTask = _serviceStatusChangeTaskStore.StartAndStoreNewTask(selectedServiceName, statusChangeMethod);
+            
+            await UpdateServiceStatus(selectedServiceName);
+
+            await statusChangeTask;
+            _serviceStatusChangeTaskStore.StopAndRemoveTaskIfExists(selectedServiceName);
+            await UpdateServiceStatus(selectedServiceName);
+        }
+
+        private async Task UpdateServiceStatus(string serviceName)
+        {
+            var newStatus = await _windowsServiceHelper.GetServiceStatusAsync(serviceName);
+            if (_serviceNameToServiceDictionary.ContainsKey(serviceName) == false)
+                return;
+
+            var service = _serviceNameToServiceDictionary[serviceName];
+            service.Status = newStatus;
+
+            if (_selectedService == service)
+                NotifyViewOfPossibleCommandAvailabilityChange();
+        }
+
+        private void NotifyViewOfPossibleCommandAvailabilityChange()
+        {
+            RaisePropertyChanged(nameof(CanStart));
+            RaisePropertyChanged(nameof(CanStop));
+            RaisePropertyChanged(nameof(CanPause));
+            RaisePropertyChanged(nameof(CanRestart));
         }
 
         private async void GetServiceListsWithDelay()
@@ -132,6 +185,7 @@
             {
                 _serviceNameToServiceDictionary.Remove(service.Name);
                 Services.Remove(service);
+                _serviceStatusChangeTaskStore.StopAndRemoveTaskIfExists(service.Name);
             }
         }
 
@@ -147,7 +201,8 @@
 
         private void DisplayNewService(IReadOnlyCollection<ServiceViewModel> newServices)
         {
-            foreach (var service in newServices) _serviceNameToServiceDictionary[service.Name] = service;
+            foreach (var service in newServices)
+                _serviceNameToServiceDictionary[service.Name] = service;
 
             Services.AddRange(newServices);
         }

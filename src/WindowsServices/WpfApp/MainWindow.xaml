@@ -28,13 +28,17 @@
         <StackPanel Grid.Row="0"
                     Orientation="Horizontal">
             <Button Content="Start"
-                    Command="{Binding StartCommand}" />
+                    Command="{Binding StartCommand}"
+                    IsEnabled="{Binding CanStart, Mode=OneWay}"/>
             <Button Content="Stop"
-                    Command="{Binding StopCommand}" />
+                    Command="{Binding StopCommand}"
+                    IsEnabled="{Binding CanStop, Mode=OneWay}" />
             <Button Content="Pause"
-                    Command="{Binding PauseCommand}" />
+                    Command="{Binding PauseCommand}"
+                    IsEnabled="{Binding CanPause, Mode=OneWay}" />
             <Button Content="Pause"
-                    Command="{Binding RestartCommand}" />
+                    Command="{Binding RestartCommand}"
+                    IsEnabled="{Binding CanRestart, Mode=OneWay}" />
         </StackPanel>
 
         <DataGrid Grid.Row="1"

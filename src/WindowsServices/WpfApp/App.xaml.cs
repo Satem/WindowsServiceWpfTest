@@ -5,6 +5,7 @@
     using Logic.Interfaces;
     using Mappers;
     using Microsoft.Extensions.DependencyInjection;
+    using ViewModelHelpers;
     using ViewModels;
 
     /// <summary>
@@ -33,6 +34,7 @@
             serviceCollection.AddTransient<MainWindow>();
             serviceCollection.AddTransient<MainViewModel>();
             serviceCollection.AddTransient<ServiceViewModelMapper, ServiceViewModelMapper>();
+            serviceCollection.AddTransient<ServiceStatusChangeTaskStore, ServiceStatusChangeTaskStore>();
 
             serviceCollection.AddTransient<IWindowsServiceHelper, WindowsServiceHelper>();
             serviceCollection.AddTransient<IAsyncTaskRunner, AsyncTaskRunner>();

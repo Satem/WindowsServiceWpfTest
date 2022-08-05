@@ -112,6 +112,7 @@
     <Compile Include="Mappers\ServiceViewModelMapper.cs" />
     <Compile Include="Models\ServiceModel.cs" />
     <Compile Include="Properties\Annotations.cs" />
+    <Compile Include="ViewModelHelpers\ServiceStatusChangeTaskStore.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\ServiceViewModel.cs" />
     <Page Include="MainWindow.xaml">
