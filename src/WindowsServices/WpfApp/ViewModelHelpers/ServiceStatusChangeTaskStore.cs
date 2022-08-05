@@ -19,12 +19,11 @@
             StopAndRemoveTaskIfExists(serviceName);
 
             var cancellationTokenSource = new CancellationTokenSource();
-            var task = new Task(() => statusChangeMethod(serviceName, cancellationTokenSource.Token));
+            var task = statusChangeMethod(serviceName, cancellationTokenSource.Token);
 
             var taskInfo = new TaskInfo(task, cancellationTokenSource);
             _serviceNameToTaskInfo[serviceName] = taskInfo;
 
-            task.Start();
             return task;
         }
 

@@ -3,9 +3,11 @@
     using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
+    using System.ComponentModel;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Windows;
     using System.Windows.Input;
     using Logic.Interfaces;
     using Mappers;
@@ -54,8 +56,10 @@
             get => _selectedService;
             set
             {
+                UnsubscribeOnServicePropertiesChange(value);
                 _selectedService = value;
                 RaisePropertyChanged(nameof(SelectedService));
+                SubscribeOnServicePropertiesChange(_selectedService);
                 NotifyViewOfPossibleCommandAvailabilityChange();
             }
         }
@@ -71,12 +75,15 @@
         public bool CanStart => _selectedService != null
                                 && _serviceStatusChangeTaskStore.IsThereAnyRunningTask(_selectedService.Name) == false
                                 && _selectedService.CanNowBeStarted;
+
         public bool CanStop => _selectedService != null
                                && _serviceStatusChangeTaskStore.IsThereAnyRunningTask(_selectedService.Name) == false
                                && _selectedService.CanNowBeStopped;
+
         public bool CanPause => _selectedService != null
                                 && _serviceStatusChangeTaskStore.IsThereAnyRunningTask(_selectedService.Name) == false
                                 && _selectedService.CanNowBePaused;
+
         public bool CanRestart => _selectedService != null
                                   && _serviceStatusChangeTaskStore.IsThereAnyRunningTask(_selectedService.Name) == false
                                   && _selectedService.CanNowBePaused;
@@ -108,11 +115,19 @@
                 return;
 
             var selectedServiceName = _selectedService.Name;
-            var statusChangeTask = _serviceStatusChangeTaskStore.StartAndStoreNewTask(selectedServiceName, statusChangeMethod);
-            
-            await UpdateServiceStatus(selectedServiceName);
+            try
+            {
 
-            await statusChangeTask;
+                var statusChangeTask = _serviceStatusChangeTaskStore.StartAndStoreNewTask(selectedServiceName, statusChangeMethod);
+            
+                await UpdateServiceStatus(selectedServiceName);
+
+                await statusChangeTask;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "Unable to change status", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             _serviceStatusChangeTaskStore.StopAndRemoveTaskIfExists(selectedServiceName);
             await UpdateServiceStatus(selectedServiceName);
         }
@@ -125,10 +140,34 @@
 
             var service = _serviceNameToServiceDictionary[serviceName];
             service.Status = newStatus;
+        }
 
-            if (_selectedService == service)
+        #region ServicePropertiesChangeSubscription
+
+        
+        private void SubscribeOnServicePropertiesChange(ServiceViewModel service)
+        {
+            if (service == null)
+                return;
+
+            service.PropertyChanged += ServicePropertiesChange;
+        }
+
+        private void UnsubscribeOnServicePropertiesChange(ServiceViewModel service)
+        {
+            if (service == null)
+                return;
+
+            service.PropertyChanged -= ServicePropertiesChange;
+        }
+
+        private void ServicePropertiesChange(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ServiceViewModel.Status))
                 NotifyViewOfPossibleCommandAvailabilityChange();
         }
+
+        #endregion
 
         private void NotifyViewOfPossibleCommandAvailabilityChange()
         {
@@ -138,6 +177,9 @@
             RaisePropertyChanged(nameof(CanRestart));
         }
 
+        #region LoadingServices
+
+        
         private async void GetServiceListsWithDelay()
         {
             while (true)
@@ -206,5 +248,7 @@
 
             Services.AddRange(newServices);
         }
+
+        #endregion
     }
 }
