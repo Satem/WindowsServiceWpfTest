@@ -48,6 +48,7 @@
                   IsReadOnly="True"
                   SelectionMode="Single"
                   SelectionUnit="FullRow"
+                  CanUserResizeRows="False"
                   CellStyle="{StaticResource NotFocusableDataGridCell}">
             <DataGrid.Columns>
                 <DataGridTextColumn

@@ -108,7 +108,9 @@
     <Compile Include="Converters\ServiceControllerStatusToStringConverter.cs" />
     <Compile Include="Logic\AsyncTaskRunner.cs" />
     <Compile Include="Logic\Interfaces\IAsyncTaskRunner.cs" />
+    <Compile Include="Logic\Interfaces\IWindowsPrincipleChecker.cs" />
     <Compile Include="Logic\Interfaces\IWindowsServiceHelper.cs" />
+    <Compile Include="Logic\WindowsPrincipleChecker.cs" />
     <Compile Include="Mappers\ServiceViewModelMapper.cs" />
     <Compile Include="Models\ServiceModel.cs" />
     <Compile Include="Properties\Annotations.cs" />

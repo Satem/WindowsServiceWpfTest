@@ -38,6 +38,7 @@
 
             serviceCollection.AddTransient<IWindowsServiceHelper, WindowsServiceHelper>();
             serviceCollection.AddTransient<IAsyncTaskRunner, AsyncTaskRunner>();
+            serviceCollection.AddTransient<IWindowsPrincipleChecker, WindowsPrincipleChecker>();
 
             return serviceCollection.BuildServiceProvider();
         }

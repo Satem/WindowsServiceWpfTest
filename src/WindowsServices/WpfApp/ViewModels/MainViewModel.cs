@@ -25,16 +25,19 @@
         private readonly ServiceStatusChangeTaskStore _serviceStatusChangeTaskStore;
 
         private readonly IWindowsServiceHelper _windowsServiceHelper;
+        private readonly IWindowsPrincipleChecker _windowsPrincipleChecker;
         private ServiceViewModel _selectedService;
 
 
         public MainViewModel(
             IWindowsServiceHelper windowsServiceHelper,
+            IWindowsPrincipleChecker windowsPrincipleChecker,
             ServiceViewModelMapper serviceViewModelMapper,
             ServiceStatusChangeTaskStore serviceStatusChangeTaskStore
         )
         {
             _windowsServiceHelper = windowsServiceHelper;
+            _windowsPrincipleChecker = windowsPrincipleChecker;
             _serviceViewModelMapper = serviceViewModelMapper;
             _serviceStatusChangeTaskStore = serviceStatusChangeTaskStore;
 
@@ -113,6 +116,13 @@
         {
             if (_selectedService == null)
                 return;
+
+            if (_windowsPrincipleChecker.IsRunUnderAdministrator == false)
+            {
+                var message = "In order to start or stop services, please run the programme as administrator";
+                MessageBox.Show(message, string.Empty, MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return;
+            }
 
             var selectedServiceName = _selectedService.Name;
             try
