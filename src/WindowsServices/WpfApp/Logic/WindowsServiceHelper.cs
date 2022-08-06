@@ -118,13 +118,13 @@
             var serviceController = new ServiceController(serviceName);
             RunStatusChangeCommand(
                 serviceController,
-                serviceController.Pause,
+                serviceController.Stop,
                 cancellationToken);
 
             if (serviceController.Status == ServiceControllerStatus.Paused)
                 RunStatusChangeCommand(
                     serviceController,
-                    serviceController.Continue,
+                    serviceController.Start,
                     cancellationToken);
         }
 
