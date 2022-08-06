@@ -144,12 +144,12 @@
 
         private async Task UpdateServiceStatus(string serviceName)
         {
-            var newStatus = await _windowsServiceHelper.GetServiceStatusAsync(serviceName);
+            var latestModel = await _windowsServiceHelper.GetServiceByNameAsync(serviceName);
             if (_serviceNameToServiceDictionary.ContainsKey(serviceName) == false)
                 return;
 
-            var service = _serviceNameToServiceDictionary[serviceName];
-            service.Status = newStatus;
+            var serviceViewModel = _serviceNameToServiceDictionary[serviceName];
+            _serviceViewModelMapper.UpdateViewModel(serviceViewModel, latestModel);
         }
 
         #region ServicePropertiesChangeSubscription
@@ -173,7 +173,9 @@
 
         private void ServicePropertiesChange(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ServiceViewModel.Status))
+            if (e.PropertyName == nameof(ServiceViewModel.Status)
+                || e.PropertyName == nameof(ServiceViewModel.CanStop)
+                || e.PropertyName == nameof(ServiceViewModel.CanPauseAndContinue))
                 NotifyViewOfPossibleCommandAvailabilityChange();
         }
 

@@ -8,7 +8,7 @@
     public interface IWindowsServiceHelper
     {
         Task<ServiceModel[]> GetWindowsServicesAsync();
-        Task<ServiceControllerStatus> GetServiceStatusAsync(string serviceName);
+        Task<ServiceModel> GetServiceByNameAsync(string serviceName);
         Task StartServiceAsync(string serviceName, CancellationToken cancellationToken);
         Task StopServiceAsync(string serviceName, CancellationToken cancellationToken);
         Task PauseServiceAsync(string serviceName, CancellationToken cancellationToken);

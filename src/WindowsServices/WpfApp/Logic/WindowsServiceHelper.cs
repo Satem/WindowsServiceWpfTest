@@ -26,9 +26,9 @@
             return _asyncTaskRunner.RunFuncAsync(GetWindowsServices);
         }
 
-        public Task<ServiceControllerStatus> GetServiceStatusAsync(string serviceName)
+        public Task<ServiceModel> GetServiceByNameAsync(string serviceName)
         {
-            return _asyncTaskRunner.RunFuncAsync(() => GetServiceStatus(serviceName));
+            return _asyncTaskRunner.RunFuncAsync(() => GetServiceByName(serviceName));
         }
 
         public Task StartServiceAsync(string serviceName, CancellationToken cancellationToken)
@@ -57,20 +57,27 @@
 
             var localMachineKey = Registry.LocalMachine;
 
-            return services.Select(x => new ServiceModel
-            {
-                Name = x.ServiceName,
-                DisplayName = x.DisplayName,
-                Status = x.Status,
-                Account = GetAccountName(localMachineKey, x.ServiceName),
-                CanPauseAndContinue = x.CanPauseAndContinue,
-                CanStop = x.CanStop
-            }).ToArray();
+            return services.Select(service => MapModelFromService(service, localMachineKey)).ToArray();
         }
 
-        private ServiceControllerStatus GetServiceStatus(string serviceName)
+        private ServiceModel GetServiceByName(string serviceName)
         {
-            return new ServiceController(serviceName).Status;
+            var localMachineKey = Registry.LocalMachine;
+            var service = new ServiceController(serviceName);
+            return MapModelFromService(service, localMachineKey);
+        }
+
+        private ServiceModel MapModelFromService(ServiceController service, RegistryKey registryKey)
+        {
+            return new ServiceModel
+            {
+                Name = service.ServiceName,
+                DisplayName = service.DisplayName,
+                Status = service.Status,
+                Account = GetAccountName(registryKey, service.ServiceName),
+                CanPauseAndContinue = service.CanPauseAndContinue,
+                CanStop = service.CanStop
+            };
         }
 
         private string GetAccountName(RegistryKey localMachineKey, string serviceName)
@@ -142,7 +149,6 @@
                 Thread.Sleep(IntervalBetweenCancellationChecksInMilliseconds);
             } while (IsPendingStatus(service.Status) &&
                      cancellationToken.IsCancellationRequested == false);
-
         }
 
         private bool IsPendingStatus(ServiceControllerStatus serviceStatus)
