@@ -7,8 +7,8 @@
         xmlns:converters="clr-namespace:WpfApp.Converters"
         mc:Ignorable="d"
         Title="Windows Services"
-        Height="450"
-        Width="800"
+        Height="600"
+        Width="1000"
         d:DataContext="{d:DesignInstance viewModels:MainViewModel}"
         KeyDown="MainWindow_OnKeyDown">
     <Window.Resources>
@@ -80,17 +80,20 @@
                 <DataGridTextColumn
                     Header="Name"
                     Binding="{Binding Name}"
-                    SortDirection="Ascending" />
+                    SortDirection="Ascending"
+                    Width="200" />
                 <DataGridTextColumn
                     Header="DisplayName"
                     Binding="{Binding DisplayName}"
                     Width="*" />
                 <DataGridTextColumn
                     Header="Status"
-                    Binding="{Binding Status, Converter={StaticResource StatusToStringConverter}}" />
+                    Binding="{Binding Status, Converter={StaticResource StatusToStringConverter}}"
+                    Width="80"/>
                 <DataGridTextColumn
                     Header="Account"
-                    Binding="{Binding Account}" />
+                    Binding="{Binding Account}"
+                    Width="200"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>
