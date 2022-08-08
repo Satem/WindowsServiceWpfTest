@@ -19,29 +19,14 @@
             <converters:ServiceControllerStatusToStringConverter x:Key="StatusToStringConverter" />
         </ResourceDictionary>
     </Window.Resources>
-    <Grid>
+    <Grid Margin="6,0,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0"
-                    Orientation="Horizontal">
-            <Button Content="Start"
-                    Command="{Binding StartCommand}"
-                    IsEnabled="{Binding CanStart, Mode=OneWay}"/>
-            <Button Content="Stop"
-                    Command="{Binding StopCommand}"
-                    IsEnabled="{Binding CanStop, Mode=OneWay}" />
-            <Button Content="Pause"
-                    Command="{Binding PauseCommand}"
-                    IsEnabled="{Binding CanPause, Mode=OneWay}" />
-            <Button Content="Restart"
-                    Command="{Binding RestartCommand}"
-                    IsEnabled="{Binding CanRestart, Mode=OneWay}" />
-        </StackPanel>
-
         <DataGrid Grid.Row="1"
+                  x:Name="WindowsServiceList"
                   ItemsSource="{Binding Services, Mode=OneWay}"
                   SelectedItem="{Binding SelectedService, Mode=TwoWay}"
                   AutoGenerateColumns="False"
@@ -49,7 +34,17 @@
                   SelectionMode="Single"
                   SelectionUnit="FullRow"
                   CanUserResizeRows="False"
-                  CellStyle="{StaticResource NotFocusableDataGridCell}">
+                  CellStyle="{StaticResource NotFocusableDataGridCell}"
+                  HeadersVisibility="Column">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Start"
+                              Command="{Binding StartCommand}"
+                              IsEnabled="{Binding CanStart}"
+                                      />
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+
             <DataGrid.Columns>
                 <DataGridTextColumn
                     Header="Name"
@@ -67,5 +62,25 @@
                     Binding="{Binding Account}" />
             </DataGrid.Columns>
         </DataGrid>
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,10">
+            <Button Command="{Binding StartCommand}"
+                    IsEnabled="{Binding CanStart, Mode=OneWay}"
+                    Style="{StaticResource StartButton}"/>
+            <Button Content="Stop"
+                    Command="{Binding StopCommand}"
+                    IsEnabled="{Binding CanStop, Mode=OneWay}"
+                    Style="{StaticResource StopButton}" />
+            <Button Content="Pause"
+                    Command="{Binding PauseCommand}"
+                    IsEnabled="{Binding CanPause, Mode=OneWay}"
+                    Style="{StaticResource PauseButton}" />
+            <Button Content="Restart"
+                    Command="{Binding RestartCommand}"
+                    IsEnabled="{Binding CanRestart, Mode=OneWay}"
+                    Style="{StaticResource RestartButton}" />
+        </StackPanel>
+
     </Grid>
 </Window>
