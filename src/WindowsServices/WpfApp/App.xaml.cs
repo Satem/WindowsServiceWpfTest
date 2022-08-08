@@ -1,10 +1,12 @@
 ﻿namespace WpfApp
 {
     using System.Windows;
+    using System.Windows.Threading;
     using Logic;
     using Logic.Interfaces;
     using Mappers;
     using Microsoft.Extensions.DependencyInjection;
+    using Serilog;
     using ViewModelHelpers;
     using ViewModels;
 
@@ -17,7 +19,19 @@
 
         public App()
         {
-            _serviceProvider = CreateServiceProvider();
+            var serviceCollection = new ServiceCollection();
+            ConfigureLogging(serviceCollection);
+            ConfigureServiceCollection(serviceCollection);
+            _serviceProvider = serviceCollection.BuildServiceProvider();
+        }
+
+        private void ConfigureLogging(ServiceCollection serviceCollection)
+        {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .WriteTo.File("logs\\windows_services_app.log", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
         }
 
         protected override void OnStartup(StartupEventArgs e)
@@ -27,10 +41,8 @@
             base.OnStartup(e);
         }
 
-        private ServiceProvider CreateServiceProvider()
+        private void ConfigureServiceCollection(IServiceCollection serviceCollection)
         {
-            var serviceCollection = new ServiceCollection();
-
             serviceCollection.AddTransient<MainWindow>();
             serviceCollection.AddTransient<MainViewModel>();
             serviceCollection.AddTransient<ServiceViewModelMapper, ServiceViewModelMapper>();
@@ -39,8 +51,14 @@
             serviceCollection.AddTransient<IWindowsServiceHelper, WindowsServiceHelper>();
             serviceCollection.AddTransient<IAsyncTaskRunner, AsyncTaskRunner>();
             serviceCollection.AddTransient<IWindowsPrincipleChecker, WindowsPrincipleChecker>();
+            serviceCollection.AddTransient<ILoggerWrapper, LoggerWrapper>();
+        }
 
-            return serviceCollection.BuildServiceProvider();
+        private void App_OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            MessageBox.Show("Fatal error has occurred and the application must be closed. Please refer to a log file for more detailed information" , "Fatal error", MessageBoxButton.OK, MessageBoxImage.Error);
+            var logger = _serviceProvider.GetRequiredService<ILoggerWrapper>();
+            logger.LogFatal(e.Exception, "Unhandled exception");
         }
     }
 }
