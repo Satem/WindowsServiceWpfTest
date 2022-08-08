@@ -26,18 +26,21 @@
 
         private readonly IWindowsServiceHelper _windowsServiceHelper;
         private readonly IWindowsPrincipleChecker _windowsPrincipleChecker;
+        private readonly ILoggerWrapper _logger;
         private ServiceViewModel _selectedService;
 
 
         public MainViewModel(
             IWindowsServiceHelper windowsServiceHelper,
             IWindowsPrincipleChecker windowsPrincipleChecker,
+            ILoggerWrapper logger,
             ServiceViewModelMapper serviceViewModelMapper,
             ServiceStatusChangeTaskStore serviceStatusChangeTaskStore
         )
         {
             _windowsServiceHelper = windowsServiceHelper;
             _windowsPrincipleChecker = windowsPrincipleChecker;
+            _logger = logger;
             _serviceViewModelMapper = serviceViewModelMapper;
             _serviceStatusChangeTaskStore = serviceStatusChangeTaskStore;
 
@@ -93,26 +96,27 @@
 
         private async void Start()
         {
-            await RunStatusChangeTaskAsync(_windowsServiceHelper.StartServiceAsync);
+            await RunStatusChangeTaskAsync(_windowsServiceHelper.StartServiceAsync, "start");
         }
 
         private async void Stop()
         {
-            await RunStatusChangeTaskAsync(_windowsServiceHelper.StopServiceAsync);
+            await RunStatusChangeTaskAsync(_windowsServiceHelper.StopServiceAsync, "stop");
         }
 
         private async void Pause()
         {
-            await RunStatusChangeTaskAsync(_windowsServiceHelper.StopServiceAsync);
+            await RunStatusChangeTaskAsync(_windowsServiceHelper.StopServiceAsync, "pause");
         }
 
         private async void Restart()
         {
-            await RunStatusChangeTaskAsync(_windowsServiceHelper.RestartServiceAsync);
+            await RunStatusChangeTaskAsync(_windowsServiceHelper.RestartServiceAsync, "restart");
         }
 
         private async Task RunStatusChangeTaskAsync(
-            Func<string, CancellationToken, Task> statusChangeMethod)
+            Func<string, CancellationToken, Task> statusChangeMethod,
+            string taskName)
         {
             if (_selectedService == null)
                 return;
@@ -127,7 +131,6 @@
             var selectedServiceName = _selectedService.Name;
             try
             {
-
                 var statusChangeTask = _serviceStatusChangeTaskStore.StartAndStoreNewTask(selectedServiceName, statusChangeMethod);
             
                 await UpdateServiceStatus(selectedServiceName);
@@ -136,7 +139,8 @@
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message, "Unable to change status", MessageBoxButton.OK, MessageBoxImage.Error);
+                _logger.LogError(e, "Unable to {taskName} {selectedServiceName}", taskName, selectedServiceName);
+                MessageBox.Show($"{e.Message}\rSee a log file for details.", $"Unable to {taskName} {selectedServiceName}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             _serviceStatusChangeTaskStore.StopAndRemoveTaskIfExists(selectedServiceName);
             await UpdateServiceStatus(selectedServiceName);
@@ -194,13 +198,31 @@
         
         private async void GetServiceListsWithDelay()
         {
+            var alreadyCastExceptions = new HashSet<string>();
             while (true)
             {
-                var services = await _windowsServiceHelper.GetWindowsServicesAsync();
+                try
+                {
+                    var services = await _windowsServiceHelper.GetWindowsServicesAsync();
+                    RefreshServices(services);
 
-                RefreshServices(services);
+                    await Task.Delay(FetchServicesDelayInMilliseconds);
 
-                await Task.Delay(FetchServicesDelayInMilliseconds);
+                    if (alreadyCastExceptions.Count > 0)
+                    {
+                        alreadyCastExceptions.Clear();
+                        _logger.LogInformation("Service list refreshing resumed successfully");
+                    }
+                }
+                catch (Exception e)
+                {
+                    if (alreadyCastExceptions.Contains(e.Message))
+                        continue;
+
+                    alreadyCastExceptions.Add(e.Message);
+                    _logger.LogError(e, "Error while refreshing the list of services");
+                    MessageBox.Show($"{e.Message}\rSee a log file for details.", "Error while refreshing the list of services", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             // ReSharper disable once FunctionNeverReturns
         }
